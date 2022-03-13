@@ -1,0 +1,23 @@
+.container {
+  width: 600px;
+  height: 500px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.messages-widget-container {}
+
+.mw-messages-container {}
+
+.mw-message {
+  border: 1px solid darkgray;
+  height: 30px;
+}
+.mw-message :nth-child(1){
+  display: inline-block;
+  min-width: 35%;
+}
+.mw-message :nth-child(n+2){
+  display: inline-block;
+  min-width: 30%;
+}
