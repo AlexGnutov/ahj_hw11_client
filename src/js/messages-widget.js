@@ -1,26 +1,25 @@
 import {
-  catchError, filter, from, interval, map, of, switchMap,
+  catchError, interval, map, of, switchMap,
 } from 'rxjs';
 import { ajax } from 'rxjs/ajax';
 import { create } from './utils/utils';
 
 export default class MessagesWidget {
-  constructor(parent) {
+  constructor() {
     this.container = create('div', 'messages-widget-container');
     this.markup = `
       <h2>Incoming</h2>
       <div class="mw-messages-container"></div>
     `;
     this.container.innerHTML = this.markup;
+  }
+
+  bindToDOM(parent) {
     parent.appendChild(this.container);
-    this.startPolling();
-    this.latest = 0;
   }
 
   startPolling() {
-    const ticker = interval(10000);
-
-    const requester = ticker.pipe(
+    const requester$ = interval(10000).pipe(
       switchMap(() => ajax.getJSON('https://ahjhw11server.herokuapp.com/messages/unread')
         .pipe(
           catchError(() => of({
@@ -29,23 +28,15 @@ export default class MessagesWidget {
             messages: [],
           })),
         )),
-    ).pipe(
       map((json) => json.messages),
-      switchMap((messages) => from(messages)),
-      filter((message) => {
-        if (message.received > this.latest) {
-          this.latest = message.received;
-          return true;
-        }
-        return false;
-      }),
-      map((filteredMessage) => {
-        // eslint-disable-next-line no-shadow
-        const { from, subject, received } = filteredMessage;
-        this.addNewMessage(from, subject, received);
-      }),
     );
-    requester.subscribe();
+
+    requester$.subscribe((messages) => {
+      messages.forEach((message) => {
+        const { from, subject, received } = message;
+        this.addNewMessage(from, subject, received);
+      });
+    });
   }
 
   addNewMessage(email, subject, date) {
@@ -54,7 +45,8 @@ export default class MessagesWidget {
       subjectShort = `${subject.substring(0, 15)}...`;
     }
     const dateObj = new Date(date);
-    const dateFormatted = dateObj.toLocaleString();
+    const pair = dateObj.toLocaleString().split(',');
+    const dateFormatted = `${pair[1].trim().substring(0, 5)}  ${pair[0]}`;
 
     const messageContainer = create('div', 'mw-message-container');
     this.markup = `
